@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from cryptography.fernet import Fernet
 import firebase_admin
@@ -24,22 +24,26 @@ fernet = Fernet(fernet_key)
 def send_message():
     try:
         data = request.json
+        app.logger.debug(f"Received data: {data}")
         sender = data["sender"]
         recipient = data["recipient"]
         message = data["message"]
         encrypted_message = fernet.encrypt(message.encode()).decode()
+        app.logger.debug(f"Encrypted message: {encrypted_message}")
 
         ref = db.reference("messages")
         ref.push({"sender": sender, "recipient": recipient, "message": encrypted_message})
 
         return jsonify({"status": "success"}), 200
     except Exception as e:
+        app.logger.error(f"Error in send_message: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/receive_messages", methods=["POST"])
 def receive_messages():
     try:
         data = request.json
+        app.logger.debug(f"Received data: {data}")
         recipient = data["recipient"]
 
         ref = db.reference("messages")
@@ -48,16 +52,17 @@ def receive_messages():
         decrypted_messages = []
         if all_messages:
             for key, value in all_messages.items():
-                if value["recipient"] == recipient:
+                if value["recipient"] == recipient or value["sender"] == recipient:
                     decrypted_message = fernet.decrypt(value["message"].encode()).decode()
                     decrypted_messages.append({
                         "sender": value["sender"],
                         "recipient": value["recipient"],
                         "message": decrypted_message,
                     })
-
+        app.logger.debug(f"Decrypted messages: {decrypted_messages}")
         return jsonify(decrypted_messages), 200
     except Exception as e:
+        app.logger.error(f"Error in receive_messages: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

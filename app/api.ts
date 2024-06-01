@@ -1,5 +1,5 @@
 // In api.ts and chat/page.tsx
-import { Message } from './types';
+import { Message, ApiMessage } from './types';
 
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -8,6 +8,7 @@ console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
 
 
 export const sendMessage = async (sender: string, recipient: string, message: string): Promise<any> => {
+    console.log('Sending payload:', { sender, recipient, message }); // Add logging
     try {
         const response = await fetch(`${backendUrl}/send_message`, {
             method: 'POST',
@@ -26,23 +27,26 @@ export const sendMessage = async (sender: string, recipient: string, message: st
     }
 };
 
-export const receiveMessages = async (recipient: string): Promise<Message[]> => {
+export const receiveMessages = async (recipient: string): Promise<ApiMessage[]> => {
+    console.log('Requesting messages for recipient:', recipient);
     try {
-        const response = await fetch(`${backendUrl}/receive_messages`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ recipient }),
-            credentials: 'include'  // Ensure credentials are included if needed
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch messages');
-        }
-        return await response.json();
+      const response = await fetch(`${backendUrl}/receive_messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ recipient }),
+        credentials: 'include'  // Ensure credentials are included if needed
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+      const data = await response.json();
+      console.log('Received messages:', data);
+      return data as ApiMessage[];
     } catch (error) {
-        console.error('receiveMessages error:', error);
-        throw error;
+      console.error('receiveMessages error:', error);
+      throw error;
     }
-};
+  };

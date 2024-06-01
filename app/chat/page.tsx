@@ -1,20 +1,11 @@
-// app/chat/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth, provider, set, get, ref, onValue, push } from "../firebase"; // Adjusted import path, removed unused imports
-import { sendMessage as sendEncryptedMessage, receiveMessages } from "../api"; // Ensure correct import path
-// In api.ts and chat/page.tsx
-import { Message } from "../types";
-
-interface User {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL: string;
-}
+import { db, auth, provider, set, get, ref, onValue, push } from "../firebase";
+import { sendMessage as sendEncryptedMessage, receiveMessages } from "../api";
+import { ApiMessage, Message, User } from "../types";
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,12 +15,25 @@ export default function Chat() {
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
-  // Define loadMessages function here
   async function loadMessages() {
     if (selectedUser && auth.currentUser) {
       try {
-        const msgs = await receiveMessages(selectedUser.email);
-        setMessages(msgs);
+        const currentUserEmail = auth.currentUser.email!;
+        const apiMessages: ApiMessage[] = await receiveMessages(selectedUser.email);
+        console.log('Messages received:', apiMessages);
+
+        const transformedMessages: Message[] = apiMessages
+          .filter(msg => (msg.sender === selectedUser.email && msg.recipient === currentUserEmail) || 
+                         (msg.sender === currentUserEmail && msg.recipient === selectedUser.email))
+          .map(msg => ({
+            text: msg.message,
+            sender: msg.sender,
+            displayName: msg.displayName,
+            recipient: msg.recipient,
+            timestamp: msg.timestamp
+          }));
+
+        setMessages(transformedMessages);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
       }
@@ -41,7 +45,18 @@ export default function Chat() {
       if (!user) {
         router.push("/login");
       } else {
-        // This fetches all users, adjust as needed
+        const userRef = ref(db, `users/${user.uid}`);
+        const userSnapshot = await get(userRef);
+        if (!userSnapshot.exists()) {
+          const userData: User = {
+            uid: user.uid,
+            email: user.email!,
+            displayName: user.displayName || user.email!.split("@")[0],
+            photoURL: user.photoURL || "",
+          };
+          await set(userRef, userData);
+        }
+
         const usersRef = ref(db, "users");
         onValue(usersRef, (snapshot) => {
           const data = snapshot.val();
@@ -60,7 +75,7 @@ export default function Chat() {
   }, [router]);
 
   useEffect(() => {
-    loadMessages(); // Use loadMessages here
+    loadMessages();
   }, [selectedUser]);
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -89,9 +104,9 @@ export default function Chat() {
       console.log("Message sent successfully");
       setInput("");
       endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
-      await loadMessages(); // Reload messages after sending
+      await loadMessages();
     } catch (error) {
-      console.error("Error sending message: ", error);
+      console.error("Error sending message:", error);
     }
   };
 

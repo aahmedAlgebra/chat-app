@@ -3,6 +3,7 @@ from flask_cors import CORS
 from cryptography.fernet import Fernet
 import firebase_admin
 from firebase_admin import credentials, db
+import bcrypt
 import os
 
 app = Flask(__name__)
@@ -20,6 +21,64 @@ if not fernet_key:
     raise ValueError("FERNET_KEY is not set in the environment variables.")
 fernet = Fernet(fernet_key)
 
+@app.route("/register", methods=["POST"])
+def register():
+    try:
+        data = request.json
+        email = data["email"]
+        password = data["password"]
+        display_name = data.get("displayName", email.split("@")[0])
+        
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        user_ref = db.reference("users").order_by_child("email").equal_to(email).get()
+        if user_ref:
+            return jsonify({"error": "User already exists"}), 400
+        
+        new_user_ref = db.reference("users").push({
+            "email": email,
+            "password": hashed_password.decode('utf-8'),
+            "displayName": display_name,
+        })
+        
+        # Retrieve the user details to return
+        user_id = new_user_ref.key
+        user_data = {
+            "uid": user_id,
+            "email": email,
+            "displayName": display_name,
+        }
+        
+        return jsonify({"status": "success", "user": user_data}), 200
+    except Exception as e:
+        app.logger.error(f"Error in register: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/login", methods=["POST"])
+def login():
+    try:
+        data = request.json
+        email = data["email"]
+        password = data["password"]
+        
+        user_ref = db.reference("users").order_by_child("email").equal_to(email).get()
+        if not user_ref:
+            return jsonify({"error": "User does not exist"}), 400
+        
+        user = list(user_ref.values())[0]
+        if bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
+            return jsonify({
+                "status": "success",
+                "uid": list(user_ref.keys())[0],
+                "email": user["email"],
+                "displayName": user["displayName"],
+            }), 200
+        else:
+            return jsonify({"error": "Invalid credentials"}), 400
+    except Exception as e:
+        app.logger.error(f"Error in login: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
 @app.route("/send_message", methods=["POST"])
 def send_message():
     try:

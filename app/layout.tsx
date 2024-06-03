@@ -1,4 +1,3 @@
-// app/layout.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,8 +5,6 @@ import { Inter } from "next/font/google";
 import Link from 'next/link';
 import "./globals.css";
 import { useRouter, usePathname } from 'next/navigation';
-import { auth, provider } from "./firebase"; // Ensure correct import path
-import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 import LoginPromptModal from "./components/LoginPromptModal"; // Ensure correct import path
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,20 +22,17 @@ export default function RootLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-        setDropdownVisible(false); // Close dropdown on logout
-        if (pathname === "/chat") {
-          router.push('/');
-          setLoginPromptVisible(true);
-        }
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      setUser(null);
+      setDropdownVisible(false); // Close dropdown on logout
+      if (pathname === "/chat") {
+        router.push('/');
+        setLoginPromptVisible(true);
       }
-    });
-
-    return () => unsubscribe();
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -49,24 +43,11 @@ export default function RootLayout({
     }
   }, [isDarkMode]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      setDropdownVisible(false); // Close dropdown on login
-      setLoginPromptVisible(false); // Close login prompt on successful login
-    } catch (error) {
-      console.error("Error logging in: ", error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setDropdownVisible(false); // Close dropdown on logout
-      router.push('/');
-    } catch (error) {
-      console.error("Error logging out: ", error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    setDropdownVisible(false); // Close dropdown on logout
+    router.push('/');
   };
 
   const toggleDropdown = () => {
@@ -98,12 +79,12 @@ export default function RootLayout({
             </button>
             {user ? (
               <div className="relative" onClick={(e) => e.stopPropagation()}>
-                <img
-                  src={user.photoURL}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full cursor-pointer"
+                <div
+                  className="w-8 h-8 rounded-full cursor-pointer bg-gray-400 flex items-center justify-center"
                   onClick={toggleDropdown}
-                />
+                >
+                  <span className="text-white">{user.displayName ? user.displayName[0] : "U"}</span>
+                </div>
                 {dropdownVisible && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                     <div className="py-1">
@@ -118,12 +99,15 @@ export default function RootLayout({
                 )}
               </div>
             ) : (
-              <button onClick={handleLogin} className="bg-blue-500 text-white p-2 rounded">Login with Google</button>
+              <div>
+                <Link href="/login" className="bg-blue-500 text-white p-2 rounded mr-4">Login</Link>
+                <Link href="/register" className="bg-green-500 text-white p-2 rounded">Register</Link>
+              </div>
             )}
           </div>
         </nav>
         {loginPromptVisible && (
-          <LoginPromptModal onClose={handleLoginPromptClose} onLogin={handleLogin} />
+          <LoginPromptModal onClose={handleLoginPromptClose} />
         )}
         <main className="p-4">{children}</main>
       </body>

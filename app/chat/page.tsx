@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth, provider, set, get, ref, onValue, push } from "../firebase";
+import { db, set, get, ref, onValue, push } from "../firebase";
 import { sendMessage as sendEncryptedMessage, receiveMessages } from "../api";
 import { ApiMessage, Message, User } from "../types";
 
@@ -16,16 +15,19 @@ export default function Chat() {
   const router = useRouter();
 
   async function loadMessages() {
-    if (selectedUser && auth.currentUser) {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && selectedUser) {
+      const currentUser = JSON.parse(storedUser);
       try {
-        const currentUserEmail = auth.currentUser.email!;
+        const currentUserEmail = currentUser.email;
         const apiMessages: ApiMessage[] = await receiveMessages(selectedUser.email);
         console.log('Messages received:', apiMessages);
 
         const transformedMessages: Message[] = apiMessages
           .filter(msg => (msg.sender === selectedUser.email && msg.recipient === currentUserEmail) || 
                          (msg.sender === currentUserEmail && msg.recipient === selectedUser.email))
-          .map(msg => ({
+          .map((msg, index) => ({
+            id: index, // Adding an id property to use as a key
             text: msg.message,
             sender: msg.sender,
             displayName: msg.displayName,
@@ -41,37 +43,22 @@ export default function Chat() {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push("/login");
-      } else {
-        const userRef = ref(db, `users/${user.uid}`);
-        const userSnapshot = await get(userRef);
-        if (!userSnapshot.exists()) {
-          const userData: User = {
-            uid: user.uid,
-            email: user.email!,
-            displayName: user.displayName || user.email!.split("@")[0],
-            photoURL: user.photoURL || "",
-          };
-          await set(userRef, userData);
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      router.push("/login");
+    } else {
+      const currentUser = JSON.parse(storedUser);
+      const usersRef = ref(db, "users");
+      onValue(usersRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const usersList = Object.keys(data)
+            .map((key) => ({ ...data[key], id: key })) // Adding an id property to use as a key
+            .filter((user) => user.email !== currentUser.email); // Filter out the current user
+          setUsers(usersList);
         }
-
-        const usersRef = ref(db, "users");
-        onValue(usersRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            const currentUser = auth.currentUser;
-            const usersList = Object.keys(data)
-              .map((key) => data[key])
-              .filter((user) => user.uid !== currentUser?.uid);
-            setUsers(usersList);
-          }
-        });
-      }
-    });
-
-    return () => unsubscribe();
+      });
+    }
   }, [router]);
 
   useEffect(() => {
@@ -82,16 +69,18 @@ export default function Chat() {
     e.preventDefault();
     if (!input.trim() || !selectedUser) return;
 
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+
+    const currentUser = JSON.parse(storedUser);
 
     const messageData = {
-      sender: currentUser.email!,
+      sender: currentUser.email,
       recipient: selectedUser.email,
       message: input,
       displayName:
         currentUser.displayName ||
-        currentUser.email!.split("@")[0] ||
+        currentUser.email.split("@")[0] ||
         "Anonymous",
     };
 
@@ -111,13 +100,8 @@ export default function Chat() {
   };
 
   const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        router.push("/login");
-      })
-      .catch((error) => {
-        console.error("Error logging out:", error);
-      });
+    localStorage.removeItem('user');
+    router.push("/login");
   };
 
   return (
@@ -128,9 +112,9 @@ export default function Chat() {
         </h2>
         {users.map((user) => (
           <div
-            key={user.uid}
+            key={user.id}
             className={`p-2 cursor-pointer ${
-              selectedUser?.uid === user.uid
+              selectedUser?.id === user.id
                 ? "bg-gray-300 dark:bg-gray-700"
                 : ""
             }`}
@@ -147,18 +131,18 @@ export default function Chat() {
               <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">
                 {selectedUser.displayName}
               </h2>
-              {messages.map((msg, idx) => (
+              {messages.map((msg) => (
                 <div
-                  key={idx}
+                  key={msg.id}
                   className={`my-2 ${
-                    msg.sender === auth.currentUser?.email
+                    msg.sender === JSON.parse(localStorage.getItem('user') || '{}').email
                       ? "self-end"
                       : "self-start"
                   }`}
                 >
                   <div
                     className={`text-sm text-gray-500 dark:text-gray-400 mb-1 ${
-                      msg.sender === auth.currentUser?.email
+                      msg.sender === JSON.parse(localStorage.getItem('user') || '{}').email
                         ? "text-right"
                         : "text-left"
                     }`}
@@ -167,7 +151,7 @@ export default function Chat() {
                   </div>
                   <div
                     className={`p-2 rounded max-w-xs ${
-                      msg.sender === auth.currentUser?.email
+                      msg.sender === JSON.parse(localStorage.getItem('user') || '{}').email
                         ? "bg-blue-500 text-white ml-auto"
                         : "bg-gray-300 dark:bg-gray-700 dark:text-white mr-auto"
                     }`}

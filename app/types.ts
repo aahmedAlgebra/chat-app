@@ -1,6 +1,7 @@
 // types.ts
 // types.ts
 export interface Message {
+  id: number; // Ensure this field is correctly named and used
   text: string; // Ensure this field is correctly named and used
   sender: string;
   displayName: string;
@@ -8,6 +9,7 @@ export interface Message {
 }
 
 export interface ApiMessage {
+
   message: string;
   sender: string;
   displayName: string;
@@ -19,5 +21,5 @@ export interface User {
   uid: string;
   email: string;
   displayName: string;
-  photoURL: string;
+  id?: string;
 }

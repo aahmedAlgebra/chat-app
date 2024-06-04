@@ -115,8 +115,8 @@ Update your Firebase Realtime Database rules to include indexing on the email fi
 ```json
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null",
+    ".read": true,
+    ".write": true,
     "users": {
       ".indexOn": ["email"]
     }

@@ -73,7 +73,6 @@ def login():
         data = request.json
         email = data["email"]
         password = data["password"]
-        print(data)
         
         user_ref = db.reference("users").order_by_child("email").equal_to(email).get()
         if not user_ref:

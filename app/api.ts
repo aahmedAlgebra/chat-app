@@ -2,7 +2,7 @@ import { Message, ApiMessage } from './types';
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-console.log('Backend URL:', backendUrl);
+// console.log('Backend URL:', backendUrl);
 
 export const sendMessage = async (sender: string, recipient: string, message: string): Promise<any> => {
     console.log('Sending payload:', { sender, recipient, message }); // Add logging
@@ -27,7 +27,7 @@ export const sendMessage = async (sender: string, recipient: string, message: st
 };
 
 export const receiveMessages = async (recipient: string): Promise<ApiMessage[]> => {
-    console.log('Requesting messages for recipient:', recipient);
+    // console.log('Requesting messages for recipient:', recipient);
     try {
       const response = await fetch(`${backendUrl}/receive_messages`, {
         method: 'POST',
@@ -42,7 +42,7 @@ export const receiveMessages = async (recipient: string): Promise<ApiMessage[]> 
         throw new Error('Failed to fetch messages');
       }
       const data = await response.json();
-      console.log('Received messages:', data);
+      // console.log('Received messages:', data);
       return data as ApiMessage[];
     } catch (error) {
       console.error('receiveMessages error:', error);

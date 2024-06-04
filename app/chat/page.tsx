@@ -21,7 +21,7 @@ export default function Chat() {
       try {
         const currentUserEmail = currentUser.email;
         const apiMessages: ApiMessage[] = await receiveMessages(selectedUser.email);
-        console.log('Messages received:', apiMessages);
+        // console.log('Messages received:', apiMessages);
 
         const transformedMessages: Message[] = apiMessages
           .filter(msg => (msg.sender === selectedUser.email && msg.recipient === currentUserEmail) || 

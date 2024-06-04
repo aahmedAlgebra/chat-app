@@ -14,6 +14,7 @@ const firebaseConfig = {
   databaseURL: "https://chat-13865-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();

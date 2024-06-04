@@ -1,11 +1,8 @@
-// In api.ts and chat/page.tsx
 import { Message, ApiMessage } from './types';
-
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-// console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
-
+console.log('Backend URL:', backendUrl);
 
 export const sendMessage = async (sender: string, recipient: string, message: string): Promise<any> => {
     console.log('Sending payload:', { sender, recipient, message }); // Add logging
@@ -20,7 +17,9 @@ export const sendMessage = async (sender: string, recipient: string, message: st
         if (!response.ok) {
             throw new Error('Failed to send message');
         }
-        return await response.json();
+        const responseData = await response.json();
+        console.log('Response from sendMessage:', responseData);
+        return responseData;
     } catch (error) {
         console.error('sendMessage error:', error);
         throw error;
@@ -43,7 +42,7 @@ export const receiveMessages = async (recipient: string): Promise<ApiMessage[]> 
         throw new Error('Failed to fetch messages');
       }
       const data = await response.json();
-      // console.log('Received messages:', data);
+      console.log('Received messages:', data);
       return data as ApiMessage[];
     } catch (error) {
       console.error('receiveMessages error:', error);

@@ -69,9 +69,15 @@ This is a simple chat application built using Next.js with TypeScript, Tailwind 
     export { db, auth, provider, set, get, ref, onValue, push };
     ```
 
-5. Create a `.env.local` file in the root directory with the following content:
+5. Create a `.env` file in the root directory with the following content:
     ```env
     NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+
+    # Firebase Admin SDK
+    FIREBASE_JSON=zzz.json
+
+    #  Database URL
+    DATABASE_URL=zzz
     ```
 
 6. Run the frontend:
@@ -94,8 +100,8 @@ This is a simple chat application built using Next.js with TypeScript, Tailwind 
 
 3. Configure Firebase Admin SDK:
     - Go to the Firebase Console and generate a new private key under Project Settings -> Service Accounts.
-    - Download the JSON file and place it in your project directory.
-    - Update the path to this JSON file in your `app.py` file.
+    - Download the JSON file and place it in the backend directory.
+    - Update the path to this JSON file in your `.env` file.
 
 4. Generate and set the Fernet key:
     - Run the `fernet.py` script to generate the Fernet key and set it as an environment variable:

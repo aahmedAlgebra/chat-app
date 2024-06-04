@@ -28,9 +28,19 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# env
+.env
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase
+/app/firebase.ts
+/backend/chat-13865-firebase-adminsdk-pr0k7-643d3e5eeb.json
+
+#  Venv
+/myvenv

@@ -4,15 +4,28 @@ from cryptography.fernet import Fernet
 import firebase_admin
 from firebase_admin import credentials, db
 import bcrypt
+from dotenv import load_dotenv
 import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, resources={r"*": {"origins": "*"}})
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-cred = credentials.Certificate(os.path.join(dir_path, "chat-13865-firebase-adminsdk-pr0k7-643d3e5eeb.json"))
+firebase_credentials_path = os.getenv("FIREBASE_JSON")
+firebase_database_url = os.getenv("DATABASE_URL")
+
+# Check if environment variables are set
+if not firebase_credentials_path:
+    raise ValueError("FIREBASE_CREDENTIALS is not set in the environment variables.")
+if not firebase_database_url:
+    raise ValueError("FIREBASE_DATABASE_URL is not set in the environment variables.")
+
+cred = credentials.Certificate(os.path.join(dir_path, firebase_credentials_path))
 firebase_admin.initialize_app(
-    cred, {"databaseURL": "https://chat-13865-default-rtdb.europe-west1.firebasedatabase.app"}
+    cred, {"databaseURL": firebase_database_url}
 )
 
 # Assume FERNET_KEY is set in your environment variables
@@ -60,6 +73,7 @@ def login():
         data = request.json
         email = data["email"]
         password = data["password"]
+        print(data)
         
         user_ref = db.reference("users").order_by_child("email").equal_to(email).get()
         if not user_ref:

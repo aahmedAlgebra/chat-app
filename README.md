@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Chat Application
 
-## Getting Started
+This is a simple chat application built using Next.js with TypeScript, Tailwind CSS, and Firebase for the frontend, and Flask with Firebase Realtime Database for the backend. It supports user registration, login, and real-time messaging.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- User registration and login
+- Real-time messaging
+- Dark mode support
+- User authentication
+- Secure message encryption
+
+## Technologies Used
+
+- Frontend: Next.js, Tailwind CSS
+- Backend: Flask, Firebase Realtime Database
+- Authentication: Custom email and password authentication
+- Message Encryption: Fernet (from `cryptography` library)
+
+## Installation
+
+### Prerequisites
+
+- Node.js and npm
+- Python and pip
+- Firebase account and project
+
+### Frontend Setup
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/aahmedAlgebra/chat-app.git
+    cd chat-app
+    ```
+
+2. Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3. Configure Firebase:
+    - Create a Firebase project in the [Firebase Console](https://console.firebase.google.com/).
+    - Enable Firebase Realtime Database.
+    - Download the `firebaseConfig` object from the Firebase Console and add it to `firebase.ts`.
+
+4. Create a `firebase.ts` file in the root directory with the following content:
+    ```typescript
+    // firebase.ts
+    import { initializeApp } from 'firebase/app';
+    import { getAuth, GoogleAuthProvider  } from "firebase/auth";
+    import { getDatabase, ref, onValue, set, push, get } from 'firebase/database';
+
+    const firebaseConfig = {
+      apiKey: "xxxx",
+      authDomain: "xxxx",
+      projectId: "xxxx",
+      storageBucket: "xxxx",
+      messagingSenderId: "xxxx",
+      appId: "xxxx",
+      measurementId: "xxxx",
+      databaseURL: "xxxx"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const db = getDatabase(app);
+
+    export { db, auth, provider, set, get, ref, onValue, push };
+    ```
+
+5. Create a `.env.local` file in the root directory with the following content:
+    ```env
+    NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+    ```
+
+6. Run the frontend:
+    ```bash
+    npm run dev
+    ```
+
+### Backend Setup
+
+1. Create a virtual environment:
+    ```bash
+    python -m venv myvenv
+    myvenv/Scripts/activate
+    ```
+
+2. Install dependencies:
+    ```bash
+    pip install Flask flask-cors cryptography firebase-admin bcrypt
+    ```
+
+3. Configure Firebase Admin SDK:
+    - Go to the Firebase Console and generate a new private key under Project Settings -> Service Accounts.
+    - Download the JSON file and place it in your project directory.
+    - Update the path to this JSON file in your `app.py` file.
+
+4. Generate and set the Fernet key:
+    - Run the `fernet.py` script to generate the Fernet key and set it as an environment variable:
+      ```bash
+      python fernet.py
+      ```
+
+5. Run the backend:
+    ```bash
+    python app.py
+    ```
+
+### Firebase Database Rules
+
+Update your Firebase Realtime Database rules to include indexing on the email field:
+
+```json
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      ".indexOn": ["email"]
+    }
+  }
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Usage
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Open the frontend application in your browser.
+2. Register a new user.
+3. Log in with the registered user.
+4. Start chatting with other users.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Contributing
 
-## Learn More
+Feel free to submit issues and pull requests for new features, bug fixes, and improvements.
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

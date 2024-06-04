@@ -4,7 +4,7 @@ import { Message, ApiMessage } from './types';
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+// console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
 
 
 export const sendMessage = async (sender: string, recipient: string, message: string): Promise<any> => {
@@ -43,7 +43,7 @@ export const receiveMessages = async (recipient: string): Promise<ApiMessage[]> 
         throw new Error('Failed to fetch messages');
       }
       const data = await response.json();
-      console.log('Received messages:', data);
+      // console.log('Received messages:', data);
       return data as ApiMessage[];
     } catch (error) {
       console.error('receiveMessages error:', error);
